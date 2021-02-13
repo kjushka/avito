@@ -17,9 +17,9 @@ import (
 )
 
 type Controller struct {
-	db                   *sql.DB
+	DB                   *sql.DB
 	procNumber           int64
-	goroutine2Status     map[int64]string
+	Goroutine2Status     map[int64]string
 	xlsxRequestWorkerMap map[int64]*xlsxRequestWorker
 	upsertedChan         chan *countData `json: "-"`
 	//updatedChan          chan *countData `json: "-"`
@@ -53,9 +53,9 @@ func (c *Controller) inc() {
 
 func NewController(db *sql.DB) *Controller {
 	return &Controller{
-		db:                   db,
+		DB:                   db,
 		procNumber:           0,
-		goroutine2Status:     make(map[int64]string),
+		Goroutine2Status:     make(map[int64]string),
 		xlsxRequestWorkerMap: make(map[int64]*xlsxRequestWorker),
 		upsertedChan:         make(chan *countData),
 		//updatedChan:          make(chan *countData),
@@ -74,14 +74,14 @@ func (c *Controller) GetProcStatus(r *http.Request) (int, string) {
 		return 500, err.Error()
 	}
 	c.mutex.Lock()
-	if status, ok := c.goroutine2Status[number]; ok {
+	if status, ok := c.Goroutine2Status[number]; ok {
 		return 200, status
 	} else {
 		return 500, "incorrect procedure number"
 	}
 }
 
-func (c *Controller) FindProductByParams(w http.ResponseWriter, r *http.Request) (int, string) {
+func (c *Controller) FindOffersByParams(w http.ResponseWriter, r *http.Request) (int, string) {
 	sellerId := r.FormValue("seller")
 	offerId := r.FormValue("offer")
 	name := r.FormValue("name")
@@ -109,7 +109,7 @@ func (c *Controller) FindProductByParams(w http.ResponseWriter, r *http.Request)
 	query := fmt.Sprintf("select seller_id, offer_id, name, price, quantity from product where %v",
 		strings.Join(sqlQueryParams, " and "))
 
-	rows, err := c.db.Query(
+	rows, err := c.DB.Query(
 		query,
 	)
 	if err != nil && err != sql.ErrNoRows {
@@ -141,11 +141,11 @@ func (c *Controller) FindProductByParams(w http.ResponseWriter, r *http.Request)
 func (c *Controller) ReadFileFromRequest(r *http.Request) (int, string) {
 	senderId, err := strconv.ParseInt(r.FormValue("seller"), 10, 64)
 	if err != nil {
-		log.Println("error in parsing sender id:", err.Error())
+		log.Println("error in parsing seller id:", err.Error())
 		return 500, err.Error()
 	}
 
-	c.goroutine2Status[c.procNumber] = "new"
+	c.Goroutine2Status[c.procNumber] = "new"
 	c.xlsxRequestWorkerMap[c.procNumber] = &xlsxRequestWorker{
 		SenderId: senderId,
 	}
@@ -158,7 +158,7 @@ func (c *Controller) ReadFileFromRequest(r *http.Request) (int, string) {
 	if err != nil {
 		log.Println("error retrieving the file:", err)
 		c.mutex.Lock()
-		c.goroutine2Status[c.procNumber] = fmt.Sprintf("error: %v", err.Error())
+		c.Goroutine2Status[c.procNumber] = fmt.Sprintf("error: %v", err.Error())
 		c.mutex.Unlock()
 		return 500, err.Error()
 	}
@@ -203,7 +203,7 @@ func (c *Controller) workWithTempFile(file multipart.File, handler *multipart.Fi
 		err := fmt.Errorf("unsupported file type: %v", fileParams[len(fileParams)-1])
 		log.Println(err.Error())
 		c.mutex.Lock()
-		c.goroutine2Status[grnumber] = fmt.Sprintf("error: %v", err.Error())
+		c.Goroutine2Status[grnumber] = fmt.Sprintf("error: %v", err.Error())
 		c.mutex.Unlock()
 		return
 	}
@@ -213,7 +213,7 @@ func (c *Controller) workWithTempFile(file multipart.File, handler *multipart.Fi
 		err := fmt.Errorf("error in creating temp file: %v", err)
 		log.Println(err.Error())
 		c.mutex.Lock()
-		c.goroutine2Status[grnumber] = fmt.Sprintf("error: %v", err.Error())
+		c.Goroutine2Status[grnumber] = fmt.Sprintf("error: %v", err.Error())
 		c.mutex.Unlock()
 		return
 	}
@@ -224,13 +224,13 @@ func (c *Controller) workWithTempFile(file multipart.File, handler *multipart.Fi
 		err := fmt.Errorf("error in reading file: %v", err.Error())
 		log.Println(err.Error())
 		c.mutex.Lock()
-		c.goroutine2Status[grnumber] = fmt.Sprintf("error: %v", err.Error())
+		c.Goroutine2Status[grnumber] = fmt.Sprintf("error: %v", err.Error())
 		c.mutex.Unlock()
 		return
 	}
 
 	tempFile.Write(bytes)
-	c.goroutine2Status[grnumber] = "file prepared for using"
+	c.Goroutine2Status[grnumber] = "file prepared for using"
 
 	wg.Add(1)
 	go c.readAndParseXLSXFile(wg, tempFile.Name(), grnumber)
@@ -248,7 +248,7 @@ func (c *Controller) workWithTempFile(file multipart.File, handler *multipart.Fi
 		strings.Join(worker.ErrorStrings, ",\n"),
 	)
 
-	c.goroutine2Status[grnumber] = finishStr
+	c.Goroutine2Status[grnumber] = finishStr
 	c.mutex.Unlock()
 
 	if err != nil {
@@ -267,7 +267,7 @@ func (c *Controller) readAndParseXLSXFile(fileWg *sync.WaitGroup, filename strin
 		err := fmt.Errorf("error in opening xlsx file: %v", err)
 		log.Println(err)
 		c.mutex.Lock()
-		c.goroutine2Status[grnumber] = fmt.Sprintf("error: %v", err.Error())
+		c.Goroutine2Status[grnumber] = fmt.Sprintf("error: %v", err.Error())
 		c.mutex.Unlock()
 		return
 	}
@@ -280,7 +280,7 @@ func (c *Controller) readAndParseXLSXFile(fileWg *sync.WaitGroup, filename strin
 	}
 
 	c.mutex.Lock()
-	c.goroutine2Status[grnumber] = "working with sheets"
+	c.Goroutine2Status[grnumber] = "working with sheets"
 	c.mutex.Unlock()
 
 	sheetWg.Wait()
@@ -316,7 +316,7 @@ func (c *Controller) workWithRows(rowsWs *sync.WaitGroup, rows []*xlsx.Row, last
 	for i := 0; i <= lastNumber; i++ {
 		offerId, err := strconv.Atoi(rows[i].Cells[0].Value)
 		if err != nil {
-			err := fmt.Sprintf("row %v: error in atoi offer id: %v", rows[i].Cells, err)
+			err := fmt.Sprintf("row %v: offer id is not a number, err: %v", rows[i].Cells, err)
 			log.Println(err)
 			c.errorStringsChan <- &errorData{
 				goroutineNum: grnumber,
@@ -353,7 +353,7 @@ func (c *Controller) workWithRows(rowsWs *sync.WaitGroup, rows []*xlsx.Row, last
 
 		price, err := strconv.Atoi(rows[i].Cells[2].Value)
 		if err != nil {
-			err := fmt.Sprintf("row %v: error in atoi price: %v", rows[i].Cells, err)
+			err := fmt.Sprintf("row %v: price is not a number, err: %v", rows[i].Cells, err)
 			log.Println(err)
 			c.errorStringsChan <- &errorData{
 				goroutineNum: grnumber,
@@ -373,7 +373,7 @@ func (c *Controller) workWithRows(rowsWs *sync.WaitGroup, rows []*xlsx.Row, last
 
 		quantity, err := strconv.Atoi(rows[i].Cells[3].Value)
 		if err != nil {
-			err := fmt.Sprintf("row %v: error in atoi quantity: %v", rows[i].Cells, err)
+			err := fmt.Sprintf("row %v: quantity is not a number, err: %v", rows[i].Cells, err)
 			log.Println(err)
 			c.errorStringsChan <- &errorData{
 				goroutineNum: grnumber,
@@ -403,7 +403,7 @@ func (c *Controller) workWithRows(rowsWs *sync.WaitGroup, rows []*xlsx.Row, last
 	}
 
 	if len(upsertData) != 0 {
-		result, err := c.db.Exec(
+		result, err := c.DB.Exec(
 			fmt.Sprintf("insert into product (seller_id, offer_id, name, price, quantity, available) "+
 				"values %v on conflict on constraint product_id do update set name = excluded.name, "+
 				"price = excluded.price, quantity = excluded.quantity, available = excluded.available;",
@@ -421,7 +421,7 @@ func (c *Controller) workWithRows(rowsWs *sync.WaitGroup, rows []*xlsx.Row, last
 	}
 
 	if len(deleteData) != 0 {
-		result, err := c.db.Exec(fmt.Sprintf("delete from product where offer_id in (%v) and seller_id = %v",
+		result, err := c.DB.Exec(fmt.Sprintf("delete from product where offer_id in (%v) and seller_id = %v",
 			strings.Join(deleteData, ", "), c.xlsxRequestWorkerMap[grnumber].SenderId))
 		if err != nil {
 			log.Println("error in delete data:", err)

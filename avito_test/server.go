@@ -12,6 +12,16 @@ import (
 
 //const DSN = "user=root password=root dbname=root sslmode=disable"
 
+func newServer(db *sql.DB) *martini.ClassicMartini {
+	c := controller.NewController(db)
+	go c.ListenControllerChans()
+	m := martini.Classic()
+	m.Get("/proc", c.GetProcStatus)
+	m.Get("/offers", c.FindOffersByParams)
+	m.Post("/send", c.ReadFileFromRequest)
+	return m
+}
+
 func main() {
 	name := os.Getenv("DATABASE_NAME")
 	user := os.Getenv("DATABASE_USER")
@@ -34,13 +44,6 @@ func main() {
 	defer db.Close()
 	fmt.Println("Connected to db")
 
-	c := controller.NewController(db)
-	go c.ListenControllerChans()
-
-	m := martini.Classic()
-	m.Get("/proc", c.GetProcStatus)
-	m.Get("/offers", c.FindProductByParams)
-	m.Post("/send", c.ReadFileFromRequest)
-	
+	m := newServer(db)
 	m.RunOnAddr(":8080")
 }
