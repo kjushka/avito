@@ -1,0 +1,42 @@
+version: "3.5"
+services:
+  backend-d:
+    container_name: backend-d
+    image: backend-d
+    depends_on:
+      - postgres
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_PTRACE
+    ports:
+      - 8080:8080
+    networks:
+      - ticket_network
+    environment:
+      - DATABASE_NAME=root
+      - DATABASE_USER=root
+      - DATABASE_PASS=root
+      - DATABASE_HOST=postgres
+    restart: always
+    
+  postgres:
+    container_name: postgres
+    image: postgres
+    environment:
+      POSTGRES_USER: 'root'
+      POSTGRES_PASSWORD: 'root'
+      POSTGRES_DB: 'root'
+    ports:
+      - 5431:5432
+    volumes:
+      - /var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - ticket_network
+    restart: always
+
+
+networks:
+  ticket_network:
+    driver: bridge
