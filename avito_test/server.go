@@ -6,11 +6,10 @@ import (
 	"fmt"
 	"github.com/go-martini/martini"
 	_ "github.com/lib/pq"
-	"log"
-	"os"
+	"net/http/pprof"
 )
 
-//const DSN = "user=root password=root dbname=root sslmode=disable"
+const DSN = "user=root password=root dbname=root sslmode=disable"
 
 func newServer(db *sql.DB) *martini.ClassicMartini {
 	c := controller.NewController(db)
@@ -19,11 +18,16 @@ func newServer(db *sql.DB) *martini.ClassicMartini {
 	m.Get("/proc", c.GetProcStatus)
 	m.Get("/offers", c.FindOffersByParams)
 	m.Post("/send", c.ReadFileFromRequest)
+	m.Any("/debug/pprof/", pprof.Index)
+	m.Any("/debug/pprof/cmdline", pprof.Cmdline)
+	m.Any("/debug/pprof/profile", pprof.Profile)
+	m.Any("/debug/pprof/symbol", pprof.Symbol)
+	m.Any("/debug/pprof/trace", pprof.Trace)
 	return m
 }
 
 func main() {
-	name := os.Getenv("DATABASE_NAME")
+	/*name := os.Getenv("DATABASE_NAME")
 	user := os.Getenv("DATABASE_USER")
 	pass := os.Getenv("DATABASE_PASS")
 	host := os.Getenv("DATABASE_HOST")
@@ -34,9 +38,9 @@ func main() {
 		user,
 		name,
 		pass,
-	)
+	)*/
 
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("postgres", DSN)
 	if err != nil {
 		panic(err)
 	}

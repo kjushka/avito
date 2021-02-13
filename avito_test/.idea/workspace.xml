@@ -2,10 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b7a5ab87-f677-4fae-922f-34dfb0518234" name="Default Changelist" comment="add tests and updated README.md">
-      <change afterPath="$PROJECT_DIR$/temp_files/test.xlsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/server_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/temp_files/readme.txt" beforeDir="false" afterPath="$PROJECT_DIR$/temp_files/readme.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server.go" beforeDir="false" afterPath="$PROJECT_DIR$/server.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -59,7 +57,7 @@
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
-  <component name="RunManager" selected="Go Test.TestEmptyBody in avito_test">
+  <component name="RunManager" selected="Go Build.go build avito_test">
     <configuration name="go build avito_test" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
       <module name="avito_test" />
       <working_directory value="$PROJECT_DIR$" />
@@ -115,8 +113,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Go Test.TestEmptyBody in avito_test" />
         <item itemvalue="Go Build.go build avito_test" />
+        <item itemvalue="Go Test.TestEmptyBody in avito_test" />
         <item itemvalue="Go Test.TestIncorrectSellerNumber in avito_test" />
         <item itemvalue="Go Test.TestFindProductsBySeller in avito_test" />
         <item itemvalue="Go Test.TestFindNonExistentNameProduct in avito_test" />
