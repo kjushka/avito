@@ -225,3 +225,34 @@ func TestIncorrectSellerNumber(t *testing.T) {
 			rr.Body.String(), expected)
 	}
 }
+
+func TestEmptyBody(t *testing.T) {
+	c := controller.NewController(initDbForTests())
+	defer c.DB.Close()
+	c.Goroutine2Status[0] = "new"
+
+	req, err := http.NewRequest("Post", "/send?seller=0", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rr := httptest.NewRecorder()
+	sendFile := func(w http.ResponseWriter, r *http.Request) {
+		code, response := c.ReadFileFromRequest(r)
+		w.WriteHeader(code)
+		w.Write([]byte(response))
+	}
+	handler := http.HandlerFunc(sendFile)
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusInternalServerError {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusInternalServerError)
+	}
+
+	expected := `request Content-Type isn't multipart/form-data`
+	if rr.Body.String() != expected {
+		t.Errorf("handler returned unexpected body: got %v want %v",
+			rr.Body.String(), expected)
+	}
+}
