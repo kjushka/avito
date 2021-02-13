@@ -1,7 +1,0 @@
-FROM golang AS builder
-WORKDIR /avito
-COPY avito_test ./
-RUN go mod download
-RUN go build server.go
-
-ENTRYPOINT [ "./server" ]
